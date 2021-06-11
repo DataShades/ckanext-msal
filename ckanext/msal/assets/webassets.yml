@@ -1,0 +1,14 @@
+# msal-js:
+#   filter: rjsmin
+#   output: ckanext-msal/%(version)s-msal.js
+#   contents:
+#     - js/msal.js
+#   extra:
+#     preload:
+#       - base/main
+
+# msal-css:
+#   filter: cssrewrite
+#   output: ckanext-msal/%(version)s-msal.css
+#   contents:
+#     - css/msal.css
