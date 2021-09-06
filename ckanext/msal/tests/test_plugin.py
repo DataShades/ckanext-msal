@@ -1,53 +1,49 @@
-"""
-Tests for plugin.py.
+import pytest
+import mock
 
-Tests are written using the pytest library (https://docs.pytest.org), and you
-should read the testing guidelines in the CKAN docs:
-https://docs.ckan.org/en/2.9/contributing/testing.html
+from ckan.common import config, session
 
-To write tests for your extension you should install the pytest-ckan package:
-
-    pip install pytest-ckan
-
-This will allow you to use CKAN specific fixtures on your tests.
-
-For instance, if your test involves database access you can use `clean_db` to
-reset the database:
-
-    import pytest
-
-    from ckan.tests import factories
-
-    @pytest.mark.usefixtures("clean_db")
-    def test_some_action():
-
-        dataset = factories.Dataset()
-
-        # ...
-
-For functional tests that involve requests to the application, you can use the
-`app` fixture:
-
-    from ckan.plugins import toolkit
-
-    def test_some_endpoint(app):
-
-        url = toolkit.url_for('myblueprint.some_endpoint')
-
-        response = app.get(url)
-
-        assert response.status_code == 200
-
-
-To temporary patch the CKAN configuration for the duration of a test you can use:
-
-    import pytest
-
-    @pytest.mark.ckan_config("ckanext.myext.some_key", "some_value")
-    def test_some_action():
-        pass
-"""
 import ckanext.msal.plugin as plugin
+from ckanext.msal.user import _login_user
 
-def test_plugin():
-    pass
+
+@pytest.mark.ckan_config("ckan.plugins", "msal")
+@pytest.mark.usefixtures("with_plugins", "with_request_context")
+def test_login(app):
+    user = {
+        "aud": "45f7852c-628c-437f-b3f2-2df26976b1e5",
+        "iss": "https://login.microsoftonline.com/3c8827a9-65fe-40b5-8644-3173d7026601/v2.0",
+        "iat": 1630936420,
+        "nbf": 1630936420,
+        "exp": 1630940320,
+        "name": "Mark Spencer",
+        "nonce": "a8d30f17e256f8d5ae042cca2087e8a848871d080ad4349248fce49c558ba7cb",
+        "oid": "fb9c93ba-0768-4816-8fcc-802b588fb8bf",
+        "preferred_username": "kvaqich@kvaqich.onmicrosoft.com",
+        "rh": "0.AQwAqSeIPP5ltUCGRDFz1wJmASyF90WMYn9Ds_It8ml2seUMAHo.",
+        "sub": "uXUZ-tk_v6B1Ix82gyQhyPp8CR_CLu5MUVmtkq4Y0To",
+        "tid": "3c8827a9-65fe-40b5-8644-3173d7026601",
+        "uti": "acThZD9K4EaUOYdVYkxaAA",
+        "ver": "2.0",
+    }
+    with mock.patch(
+        "ckanext.msal.user.get_msal_user_data",
+        return_value={
+            "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users/$entity",
+            "@odata.id": "https://graph.microsoft.com/v2/3c8827a9-65fe-40b5-8644-3173d7026601/directoryObjects/fb9c93ba-0768-4816-8fcc-802b588fb8bf/Microsoft.DirectoryServices.User",
+            "businessPhones": ["380999222611"],
+            "displayName": "Mark Spencer",
+            "givenName": "Mark",
+            "mailNickname": "mark209",
+            "jobTitle": None,
+            "mail": None,
+            "mobilePhone": None,
+            "officeLocation": None,
+            "preferredLanguage": None,
+            "surname": "Pavlyuk",
+            "userPrincipalName": "kvaqich@kvaqich.onmicrosoft.com",
+            "id": "fb9c93ba-0768-4816-8fcc-802b588fb8bf",
+        },
+    ) as get_msal_user_data:
+        user_data = _login_user(user)
+        assert user["oid"] == user_data["id"]

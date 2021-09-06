@@ -35,18 +35,15 @@ class MsalPlugin(p.SingletonPlugin):
 
         If the user is identified then it should set:
 
-         - g.user: The name of the user
-         - g.userobj: The actual user object
+         - tk.g.user: The name of the user
+         - tk.g.userobj: The actual user object
         '''
 
-        # TODO: get rid of this
-        if not getattr(tk.g, 'userobj', None):
-            tk.g.userobj = None
+        if session.get('user') and not any((tk.g.setdefault('userobj'), tk.g.setdefault('user'))):
+            user = user_funcs._login_user(session['user'])
 
-        if not getattr(tk.g, 'user', None):
-            tk.g.user = None
-
-        if session.get('user') and not any((tk.g.userobj, tk.g.user)):
-            user: model.User = user_funcs._login_user(session.get('user'))
-            tk.g.user = user.name
-            tk.g.userobj = user
+            if user:
+                tk.g.user = user["name"] if isinstance(user, dict) else user.name
+    
+    def logout(self):
+        session.clear()
