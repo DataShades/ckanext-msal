@@ -3,7 +3,7 @@ from datetime import datetime as dt
 from ckan.common import session
 
 import ckanext.msal.utils as msal_utils
-from ckanext.msal.user import get_msal_user_data
+from ckanext.msal.user import get_msal_user_data, is_user_enabled
 
 
 def _invalidate_user_session():
@@ -14,7 +14,7 @@ def _invalidate_user_session():
 
     if session.get("user") and _is_session_expired():
         if _is_session_expired():
-            if not is_loggen_in():
+            if not is_logged_in():
                 session.clear()
             else:
                 session["user_exp"] = msal_utils._get_exp_date()
@@ -33,12 +33,13 @@ def _is_session_expired() -> bool:
     return False
 
 
-def is_loggen_in():
+def is_logged_in():
     user_data = get_msal_user_data()
     # TODO: hypothetically, here we can change something in user metadata
 
-    if "error" in user_data:
+    if "error" in user_data or not is_user_enabled(user_data):
         return False
+
     return True
 
 

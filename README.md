@@ -1,16 +1,10 @@
-[![Tests](https://github.com/mutantsan/ckanext-msal/workflows/Tests/badge.svg?branch=main)](https://github.com/mutantsan/ckanext-msal/actions)
-
 # ckanext-msal
 
-**TODO:** Put a description of your extension here:  What does it do? What features does it have? Consider including some screenshots or embedding a video!
+This extension allows you to sign in users with Microsoft identities (Azure AD, Microsoft Accounts and Azure AD B2C accounts). It uses [Microsoft MSAL](https://github.com/AzureAD/microsoft-authentication-library-for-python) library.
 
+It works with Microsoft 365 accounts. But in future, the situation could change.
 
 ## Requirements
-
-**TODO:** For example, you might want to mention here which versions of CKAN this
-extension works with.
-
-If your extension works across different versions you can add the following table:
 
 Compatibility with core CKAN versions:
 
@@ -19,21 +13,9 @@ Compatibility with core CKAN versions:
 | 2.6 and earlier | not tested    |
 | 2.7             | not tested    |
 | 2.8             | not tested    |
-| 2.9             | not tested    |
-
-Suggested values:
-
-* "yes"
-* "not tested" - I can't think of a reason why it wouldn't work
-* "not yet" - there is an intention to get it working
-* "no"
-
+| 2.9             | yes           |
 
 ## Installation
-
-**TODO:** Add any additional install steps to the list below.
-   For example installing any non-Python dependencies or adding any required
-   config settings.
 
 To install ckanext-msal:
 
@@ -58,15 +40,27 @@ To install ckanext-msal:
 
 
 ## Config settings
+	# The application client id. Mandatory option.
+	ckanext.msal.client_id = 000000-0000-0000-0000-00000000000
+	
+	# The client secret. Mandatory option.
+	ckanext.msal.client_secret = 000000-0000-0000-0000-00000000000
+	
+    # The tenant ID. If it's not provided, the common one for multi-tenant app will be used.
+    # In this case, the application is not guaranteed to work properly.
+    # (optional, default: 'common').
+    ckanext.msal.tenant_id = 000000-0000-0000-0000-00000000000
 
-None at present
+    # The redirect path should be setted up in Azure AD web app config.
+    # It handles the response from Microsoft.
+    # (optional, default: "/get_msal_token").
+    ckanext.msal.redirect_path
 
-**TODO:** Document any optional config settings here. For example:
-
-	# The minimum number of hours to wait before re-checking a resource
-	# (optional, default: 24).
-	ckanext.msal.some_setting = some_default_value
-
+    # While the session lifespan could be manage only in Azure AD conditional policies panel,
+    # this option actually implies how often do we send a test request for the Microsoft Graph API
+    # to check if our Access token is still alive.
+    # (optional, default: 3600, in seconds).
+    ckanext.msal.session_lifetime = 3600
 
 ## Developer installation
 
@@ -81,42 +75,10 @@ do:
 
 ## Tests
 
-To run the tests, do:
+If you changed something - be sure to run tests before merging your changes. To run tests, do:
 
     pytest --ckan-ini=test.ini
 
-
-## Releasing a new version of ckanext-msal
-
-If ckanext-msal should be available on PyPI you can follow these steps to publish a new version:
-
-1. Update the version number in the `setup.py` file. See [PEP 440](http://legacy.python.org/dev/peps/pep-0440/#public-version-identifiers) for how to choose version numbers.
-
-2. Make sure you have the latest version of necessary packages:
-
-    pip install --upgrade setuptools wheel twine
-
-3. Create a source and binary distributions of the new version:
-
-       python setup.py sdist bdist_wheel && twine check dist/*
-
-   Fix any errors you get.
-
-4. Upload the source distribution to PyPI:
-
-       twine upload dist/*
-
-5. Commit any outstanding changes:
-
-       git commit -a
-       git push
-
-6. Tag the new release of the project on GitHub with the version number from
-   the `setup.py` file. For example if the version number in `setup.py` is
-   0.0.1 then do:
-
-       git tag 0.0.1
-       git push --tags
 
 ## License
 

@@ -13,7 +13,7 @@ import ckanext.msal.utils as msal_utils
 
 
 log = logging.getLogger(__name__)
-USER_ENDPOINT = "https://graph.microsoft.com/v1.0/me"
+USER_ENDPOINT = "https://graph.microsoft.com/beta/me"
 
 
 def _login_user(user_data: dict) -> Dict[str, Any]:
@@ -27,6 +27,16 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     args
     user_data: dict - user data dict
 
+    {
+        "displayName": "Mark Spencer",
+        "givenName": "Mark",
+        "mailNickname": "mark209",
+        "mail": mark209@myorg.onmicrosoft.com,
+        "surname": "Spencer",
+        "userPrincipalName": "mark209@myorg.onmicrosoft.com",
+        "id": "3f22cb88-c272-44f1-838f-f823cdc08bd6",
+    }
+        
     return
     type: Dict[str, Any]
     """
@@ -166,9 +176,9 @@ def _is_username_unique(username: str) -> bool:
     return False
 
 
-def is_user_disabled(user_dict: Dict[str, str]) -> bool:
+def is_user_enabled(user_dict: Dict[str, str]) -> bool:
     """
-    Returns True if user is disabled
+    Returns True if user is enabled
 
     # TODO
     Currently, we are not using this function.

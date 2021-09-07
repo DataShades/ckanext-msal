@@ -43,7 +43,7 @@ class MsalPlugin(p.SingletonPlugin):
             user = user_funcs._login_user(session['user'])
 
             if user:
-                tk.g.user = user["name"] if isinstance(user, dict) else user.name
+                tk.g.user = user["name"]
     
     def logout(self):
         session.clear()

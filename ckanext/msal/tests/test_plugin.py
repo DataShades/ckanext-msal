@@ -40,7 +40,7 @@ def test_login(app):
             "mobilePhone": None,
             "officeLocation": None,
             "preferredLanguage": None,
-            "surname": "Pavlyuk",
+            "surname": "Spencer",
             "userPrincipalName": "kvaqich@kvaqich.onmicrosoft.com",
             "id": "fb9c93ba-0768-4816-8fcc-802b588fb8bf",
         },
