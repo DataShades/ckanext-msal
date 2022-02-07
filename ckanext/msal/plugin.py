@@ -18,8 +18,6 @@ class MsalPlugin(p.SingletonPlugin):
 
     def update_config(self, config_):
         tk.add_template_directory(config_, 'templates')
-        tk.add_public_directory(config_, 'public')
-        tk.add_resource('fanstatic', 'msal')
 
     # IMiddleware
     def make_middleware(self, app, config):
@@ -44,6 +42,8 @@ class MsalPlugin(p.SingletonPlugin):
 
             if user:
                 tk.g.user = user["name"]
+            else:
+                session.clear()
     
     def logout(self):
         session.clear()
