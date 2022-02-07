@@ -62,6 +62,18 @@ To install ckanext-msal:
     # (optional, default: 3600, in seconds).
     ckanext.msal.session_lifetime = 3600
 
+    # The list of restricted email domains. User won't be able to login under
+    # an email with those domains (optional, default: None)
+    ckanext.msal.restrict.domain_list = gmail.com, onmicrosoft.com
+
+    # The list of allowed email domains. User won't be able to login under
+    # any other emails (optional, default: None)
+    ckanext.msal.restrict.allowed_domain_list = protonmail.com, orgname.onmicrosoft.com
+
+    # A message that will be shown to users with a restricted domain
+    # (optional, default: "Your email domain is restricted. Please, contact site admin.")
+    ckanext.msal.restrict.error_message
+
 ## Developer installation
 
 To install ckanext-msal for development, activate your CKAN virtualenv and
