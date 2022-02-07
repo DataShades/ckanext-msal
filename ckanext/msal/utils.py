@@ -119,8 +119,13 @@ def is_email_allowed(email: str) -> bool:
     Returns:
         bool
     """
+    
+    allowed_domains: list[str] = get_allowed_domains()
+    
+    if not allowed_domains:
+        return True
 
-    for domain in get_restricted_domains():
+    for domain in get_allowed_domains():
         if email.endswith(domain):
             return True
     return False
