@@ -11,7 +11,7 @@ class TestUtils(object):
     user_dict = {
         "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users/$entity",
         "@odata.id": "https://graph.microsoft.com/v2/3c8827a9-65fe-40b5-8644-3173d7026601/directoryObjects/fb9c93ba-0768-4816-8fcc-802b588fb8bf/Microsoft.DirectoryServices.User",
-        "businessPhones": ["380999222611"],
+        "businessPhones": ["380666333211"],
         "displayName": "Mark Spencer",
         "givenName": "Mark",
         "mailNickname": "mark209",
@@ -27,7 +27,7 @@ class TestUtils(object):
 
     def test_exp_date(self):
         exp_date: float = utils._get_exp_date()
-        
+
         assert isinstance(exp_date, float)
         assert dt.now().timestamp() < exp_date
 

@@ -3,7 +3,6 @@ import mock
 
 from ckan.common import config, session
 
-import ckanext.msal.plugin as plugin
 from ckanext.msal.user import _login_user
 
 

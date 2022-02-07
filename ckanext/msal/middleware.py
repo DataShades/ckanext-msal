@@ -12,7 +12,7 @@ def _invalidate_user_session():
     Otherwise, sets a new expiration date
     """
 
-    if session.get("user") and _is_session_expired():
+    if session.get("user"):
         if _is_session_expired():
             if not is_logged_in():
                 session.clear()
