@@ -36,11 +36,11 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
         "userPrincipalName": "mark209@myorg.onmicrosoft.com",
         "id": "3f22cb88-c272-44f1-838f-f823cdc08bd6",
     }
-        
+
     return
     type: Dict[str, Any]
     """
-    
+
     object_id: str = user_data["oid"]
 
     try:
@@ -88,6 +88,18 @@ def get_msal_user_data() -> Dict[str, Any]:
 
     log.info(f"MSAL. Success fetch.")
 
+    user_data: dict[str, Any] = resp.json()
+    user_email: str = _get_email(user_data)
+
+    if (msal_utils.is_email_restricted(user_email)
+        or not msal_utils.is_email_allowed(user_email)):
+        log.info(
+            "MSAL. User won't be created, "
+            f"because of the domain policy: {user_email}"
+        )
+        return {
+            "error": tk._(msal_conf.RESTRICTION_ERR)
+        }
     return resp.json()
 
 

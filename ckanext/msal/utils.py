@@ -6,6 +6,7 @@ from datetime import timedelta as td
 import msal
 
 import ckan.lib.helpers as h
+import ckan.plugins.toolkit as tk
 from ckan.common import session
 
 import ckanext.msal.config as msal_conf
@@ -13,14 +14,17 @@ import ckanext.msal.config as msal_conf
 
 def build_msal_app(cache=None, authority=None):
     return msal.ConfidentialClientApplication(
-        msal_conf.CLIENT_ID, authority=authority or msal_conf.AUTHORITY,
-        client_credential=msal_conf.CLIENT_SECRET, token_cache=cache)
+        msal_conf.CLIENT_ID,
+        authority=authority or msal_conf.AUTHORITY,
+        client_credential=msal_conf.CLIENT_SECRET,
+        token_cache=cache,
+    )
 
 
 def build_auth_code_flow(authority=None, scopes=None) -> Dict[str, Any]:
     return build_msal_app(authority=authority).initiate_auth_code_flow(
-        scopes or [],
-        redirect_uri=h.url_for("msal.authorized", _external=True))
+        scopes or [], redirect_uri=h.url_for("msal.authorized", _external=True)
+    )
 
 
 def _load_cache() -> msal.SerializableTokenCache:
@@ -64,3 +68,59 @@ def _make_password() -> str:
     type: str
     """
     return secrets.token_urlsafe(60)
+
+
+def get_restricted_domains() -> List[str]:
+    """Returns a lits of restricted domains from config
+    User won't be able to login with this email domain
+
+    Returns:
+        List[str]: a list of domain strings
+    """
+
+    return tk.aslist(msal_conf.RESTRICTED_DOMAINS, ",")
+
+
+def get_allowed_domains() -> List[str]:
+    """Returns a lits of allowed domains from config
+    User will be able to login only with those email domains
+
+    Returns:
+        List[str]: a list of domain strings
+    """
+
+    return tk.aslist(msal_conf.ALLOWED_DOMAINS, ",")
+
+
+def is_email_restricted(email: str) -> bool:
+    """Checks if the user email is restricted by domain
+    Returns True if resticted
+
+    Args:
+        email (str): user email
+
+    Returns:
+        bool
+    """
+
+    for domain in get_restricted_domains():
+        if email.endswith(domain):
+            return True
+    return False
+
+
+def is_email_allowed(email: str) -> bool:
+    """Checks if the user email is allowed by domain
+    Returns True if allowed
+
+    Args:
+        email (str): user email
+
+    Returns:
+        bool
+    """
+
+    for domain in get_restricted_domains():
+        if email.endswith(domain):
+            return True
+    return False
