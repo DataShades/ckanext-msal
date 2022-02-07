@@ -50,10 +50,13 @@ def authorized():
 
 @msal.route("/user/msal-logout")
 def logout():
-    session.clear()  # Wipe out user and its token cache from session
-    return h.redirect_to(
-            f"{msal_conf.AUTHORITY}/oauth2/v2.0/logout?post_logout_redirect_uri={h.url_for('user.logout', _external=True)}")
-
+    if session.get('msal_auth_flow') or session.get('msal_token_cache'):
+        session.clear()  # Wipe out user and its token cache from session
+        redirect_uri: str = h.url_for('user.logout', _external=True)
+        return h.redirect_to(
+            f"{msal_conf.AUTHORITY}/oauth2/v2.0/logout?post_logout_redirect_uri={redirect_uri}")
+    
+    return h.redirect_to("user.logout")
 
 @msal.route("/user/msal-login")
 def login():
