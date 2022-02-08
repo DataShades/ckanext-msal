@@ -51,12 +51,12 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     except tk.ObjectNotFound:
         log.info(f"MSAL. User not found, creating new one.")
         user_dict = get_msal_user_data()
-        
+
         if "error" in user_dict:
             log.error("MSAL. User creation failed.")
             log.error(user_dict["error"])
             return {}
-        
+
         return _create_user_from_user_data(user_dict) if user_dict else {}
 
     return user
@@ -65,7 +65,7 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
 def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
     """Searches for an existing user created with MSAL
     or for a user with the same email
-    
+
 
     Args:
         user_data (dict[str, Any]): MSAL user data
@@ -76,28 +76,26 @@ def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
     Returns:
         dict[str, Any]: CKAN user data
     """
-    
+
     user = (
         model.Session.query(model.User.id)
         .filter(model.User.plugin_extras["msal"]["id"].astext == str(user_data["id"]))
-        .one_or_none() 
+        .one_or_none()
     )
-    
+
     if not user and msal_conf.MERGE_MATCHING_EMAILS:
         user_dict = _merge_users(user_data)
-        import ipdb;ipdb.set_trace();
-        
+
         if user_dict:
             return user_dict
 
     if not user:
-        raise tk.ObjectNotFound(tk._(f"User with MSAL ID - {user_data['id']} not found"))
-    
+        raise tk.ObjectNotFound(
+            tk._(f"User with MSAL ID - {user_data['id']} not found")
+        )
+
     site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
-    context = {
-        "user": site_user["name"],
-        "ignore_auth": True
-    }
+    context = {"user": site_user["name"], "ignore_auth": True}
     return tk.get_action("user_show")(context, {"id": user.id})
 
 
@@ -106,32 +104,26 @@ def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
     user = (
         model.Session.query(model.User.id)
         .filter(model.User.email == user_email)
-        .one_or_none() 
+        .one_or_none()
     )
 
     if user is None:
         return
-    
+
     log.info(f"MSAL. A user with the same email has been found: {user_email}")
     log.info("MSAL. Merging users.")
 
     site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
-    context = {
-        "user": site_user[u'name'],
-        "ignore_auth": True
-    }
+    context = {"user": site_user["name"], "ignore_auth": True}
 
     user_dict = tk.get_action("user_show")(context, {"id": user.id})
     user_dict.setdefault("plugin_extras", {})
-    user_dict["plugin_extras"]["msal"] = {
-        "id": user_data["id"]
-    }
-    
+    user_dict["plugin_extras"]["msal"] = {"id": user_data["id"]}
 
-    user_dict['password'] = msal_utils._make_password()
+    user_dict["password"] = msal_utils._make_password()
     user_obj = context["user_obj"]
     try:
-        log.info(f'Emailing reset link to user: {user_obj.name}')
+        log.info(f"Emailing reset link to user: {user_obj.name}")
         mailer.send_reset_link(user_obj)
     except mailer.MailerException as e:
         # SMTP is not configured correctly or the server is
@@ -174,13 +166,14 @@ def get_msal_user_data() -> Dict[str, Any]:
     user_data: dict[str, Any] = resp.json()
     user_email: str = _get_email(user_data)
 
-    if (msal_utils.is_email_restricted(user_email)
-        or not msal_utils.is_email_allowed(user_email)):
+    if msal_utils.is_email_restricted(user_email) or not msal_utils.is_email_allowed(
+        user_email
+    ):
         log.info(
             "MSAL. User won't be created, "
             f"because of the domain policy: {user_email}"
         )
-        raise tk.ValidationError({'email': [tk._(msal_conf.RESTRICTION_ERR)]})
+        raise tk.ValidationError({"email": [tk._(msal_conf.RESTRICTION_ERR)]})
     return resp.json()
 
 
@@ -211,27 +204,28 @@ def _create_user_from_user_data(user_data: dict) -> Dict[str, Any]:
             "email": email,
             "name": username,
             "password": password,
-            "plugin_extras": {
-                "msal": {
-                        "id": user_data["id"]
-                }
-            },
+            "plugin_extras": {"msal": {"id": user_data["id"]}},
         },
     )
     log.info(f"MSAL. User has been created: {user['id']} - {user['name']}.")
     return user
 
 
-def _get_email(user_dict: Dict[str,str,]) -> str:
+def _get_email(
+    user_dict: Dict[
+        str,
+        str,
+    ]
+) -> str:
     """
     Fetches email from user_data if exists, otherwise generates random email
     The `userPrincipalName` is formatted like an email address (username@onmicrosoft.com)
-    
+
     userPrincipalName: The user principal name (UPN) of the user.
         The UPN is an Internet-style login name for the user based on
         the Internet standard RFC 822. By convention,
         this should map to the user's email name.
-    
+
     mail: The SMTP address for the user, for example, 'jeff@contoso.onmicrosoft.com'
     """
     return user_dict.get("userPrincipalName") or user_dict.get("mail") or _make_email()

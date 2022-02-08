@@ -59,15 +59,16 @@ class TestUser(object):
         username = user_funcs._get_username({"mail": "testuser@gmail.com"})
         username == "testuser"
 
-        username = user_funcs._get_username({"userPrincipalName": "testuser2@gmail.com"})
+        username = user_funcs._get_username(
+            {"userPrincipalName": "testuser2@gmail.com"}
+        )
         username == "testuser2"
 
     def test_is_username_unqiue(self):
         user = factories.User()
 
-        is_unique: bool = user_funcs._is_username_unique(user['name'])
+        is_unique: bool = user_funcs._is_username_unique(user["name"])
         assert not is_unique
 
         is_unique: bool = user_funcs._is_username_unique("absolutely_new_user")
         assert is_unique
-    

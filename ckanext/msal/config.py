@@ -13,6 +13,8 @@ RESTRICTION_ERR = config.get(
     "ckanext.msal.restrict.error_message",
     "Your email domain is restricted. Please, contact site admin.",
 )
-MERGE_MATCHING_EMAILS = tk.asbool(config.get("ckanext.msal.merge_matching_emails", False))
+MERGE_MATCHING_EMAILS = tk.asbool(
+    config.get("ckanext.msal.merge_matching_emails", False)
+)
 
 SCOPE = ["User.ReadBasic.All"]

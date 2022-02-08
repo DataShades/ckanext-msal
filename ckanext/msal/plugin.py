@@ -17,7 +17,7 @@ class MsalPlugin(p.SingletonPlugin):
     # IConfigurer
 
     def update_config(self, config_):
-        tk.add_template_directory(config_, 'templates')
+        tk.add_template_directory(config_, "templates")
 
     # IMiddleware
     def make_middleware(self, app, config):
@@ -29,32 +29,35 @@ class MsalPlugin(p.SingletonPlugin):
 
     # IAuthenticator
     def identify(self):
-        u'''Called to identify the user.
+        """Called to identify the user.
 
         If the user is identified then it should set:
 
          - tk.g.user: The name of the user
          - tk.g.userobj: The actual user object
-        '''
+        """
 
-        if session.get('user') and not any((tk.g.setdefault('userobj'), tk.g.setdefault('user'))):
+        if session.get("user") and not any(
+            (tk.g.setdefault("userobj"), tk.g.setdefault("user"))
+        ):
             try:
-                user = user_funcs._login_user(session['user'])
+                user = user_funcs._login_user(session["user"])
             except tk.ValidationError as e:
                 session.clear()
-            
+
                 session["flash"] = []
-                
+
                 for error in e.error_summary.items():
-                    session["flash"].append(("alert-error", f"{error[0]}: {error[1]}", True))
-                
+                    session["flash"].append(
+                        ("alert-error", f"{error[0]}: {error[1]}", True)
+                    )
+
                 return
-            
 
             if user:
                 tk.g.user = user["name"]
             else:
                 session.clear()
-    
+
     def logout(self):
         session.clear()

@@ -119,9 +119,9 @@ def is_email_allowed(email: str) -> bool:
     Returns:
         bool
     """
-    
+
     allowed_domains: list[str] = get_allowed_domains()
-    
+
     if not allowed_domains:
         return True
 
