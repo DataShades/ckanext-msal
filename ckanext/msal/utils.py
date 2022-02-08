@@ -9,20 +9,24 @@ import ckan.lib.helpers as h
 import ckan.plugins.toolkit as tk
 from ckan.common import session
 
-import ckanext.msal.config as msal_conf
+import ckanext.msal.config as conf
 
 
-def build_msal_app(cache=None, authority=None):
+def build_msal_app(cache=None):
+    authority: str = tk.config.get(conf.AUTHORITY, conf.AUTHORITY_DF)
+    client_id: str = tk.config.get(conf.CLIENT_ID)
+    client_credential: str = tk.config.get(conf.CLIENT_SECRET)
+
     return msal.ConfidentialClientApplication(
-        msal_conf.CLIENT_ID,
-        authority=authority or msal_conf.AUTHORITY,
-        client_credential=msal_conf.CLIENT_SECRET,
+        client_id,
+        authority=f"https://login.microsoftonline.com/{authority}",
+        client_credential=client_credential,
         token_cache=cache,
     )
 
 
 def build_auth_code_flow(authority=None, scopes=None) -> Dict[str, Any]:
-    return build_msal_app(authority=authority).initiate_auth_code_flow(
+    return build_msal_app().initiate_auth_code_flow(
         scopes or [], redirect_uri=h.url_for("msal.authorized", _external=True)
     )
 
@@ -57,7 +61,11 @@ def _get_exp_date():
     return
     type: float
     """
-    return (dt.now() + td(seconds=msal_conf.USER_SESSION_LIFETIME)).timestamp()
+
+    session_ttl: int = tk.asint(
+        tk.config.get(conf.USER_SESSION_TTL, conf.USER_SESSION_TTL_DF)
+    )
+    return (dt.now() + td(seconds=session_ttl)).timestamp()
 
 
 def _make_password() -> str:
@@ -78,7 +86,7 @@ def get_restricted_domains() -> List[str]:
         List[str]: a list of domain strings
     """
 
-    return tk.aslist(msal_conf.RESTRICTED_DOMAINS, ",")
+    return tk.aslist(tk.config.get(conf.RESTRICTED_DOMAINS), ",")
 
 
 def get_allowed_domains() -> List[str]:
@@ -89,7 +97,7 @@ def get_allowed_domains() -> List[str]:
         List[str]: a list of domain strings
     """
 
-    return tk.aslist(msal_conf.ALLOWED_DOMAINS, ",")
+    return tk.aslist(tk.config.get(conf.ALLOWED_DOMAINS), ",")
 
 
 def is_email_restricted(email: str) -> bool:
@@ -129,3 +137,8 @@ def is_email_allowed(email: str) -> bool:
         if email.endswith(domain):
             return True
     return False
+
+
+def get_site_admin_context() -> dict:
+    site_user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
+    return {"user": site_user["name"], "ignore_auth": True}

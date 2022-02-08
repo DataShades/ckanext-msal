@@ -1,8 +1,11 @@
+from uuid import uuid4
 from datetime import datetime as dt
 
 import pytest
 
+import ckan.logic as logic
 from ckan.tests import factories
+
 import ckanext.msal.user as user_funcs
 
 
@@ -72,3 +75,43 @@ class TestUser(object):
 
         is_unique: bool = user_funcs._is_username_unique("absolutely_new_user")
         assert is_unique
+
+    def test_create_and_get(self):
+        user_data = {
+            "userPrincipalName": "mark.spencer@linkdigital.com.au",
+            "id": str(uuid4()),
+        }
+        user1 = user_funcs.get_or_create_user(user_data)
+
+        assert user1["plugin_extras"]["msal"]["id"] == user_data["id"]
+        assert user1["name"] == "mark-spencer"
+
+        user2 = user_funcs.get_or_create_user(user_data)
+
+        assert user1["id"] == user2["id"]
+
+    def test_user_merging_disabled(self):
+        factories.User(email="joe.black@linkdigital.com.au")
+
+        user_data = {
+            "userPrincipalName": "joe.black@linkdigital.com.au",
+            "id": str(uuid4()),
+        }
+
+        with pytest.raises(logic.ValidationError):
+            user_funcs.get_or_create_user(user_data)
+
+    @pytest.mark.ckan_config("ckanext.msal.merge_matching_emails", "True")
+    @pytest.mark.usefixtures("with_request_context")
+    def test_user_merging_enabled(self):
+        user1 = factories.User(email="joe.black@linkdigital.com.au")
+
+        user_data = {
+            "userPrincipalName": "joe.black@linkdigital.com.au",
+            "id": str(uuid4()),
+        }
+
+        user2 = user_funcs.get_or_create_user(user_data)
+
+        assert user1["id"] == user2["id"]
+        assert user2["plugin_extras"]["msal"]["id"] == user_data["id"]

@@ -13,7 +13,7 @@ import ckan.model as model
 import ckan.lib.mailer as mailer
 from ckan.lib.munge import munge_name
 
-import ckanext.msal.config as msal_conf
+import ckanext.msal.config as conf
 import ckanext.msal.utils as msal_utils
 
 
@@ -50,14 +50,7 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
         user: Dict[str, Any] = _get_user(user_data)
     except tk.ObjectNotFound:
         log.info(f"MSAL. User not found, creating new one.")
-        user_dict = get_msal_user_data()
-
-        if "error" in user_dict:
-            log.error("MSAL. User creation failed.")
-            log.error(user_dict["error"])
-            return {}
-
-        return _create_user_from_user_data(user_dict) if user_dict else {}
+        return _create_user_from_user_data(user_data)
 
     return user
 
@@ -83,7 +76,9 @@ def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
         .one_or_none()
     )
 
-    if not user and msal_conf.MERGE_MATCHING_EMAILS:
+    if not user and tk.config.get(
+        conf.MERGE_MATCHING_EMAILS, conf.MERGE_MATCHING_EMAILS_DF
+    ):
         user_dict = _merge_users(user_data)
 
         if user_dict:
@@ -94,9 +89,9 @@ def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
             tk._(f"User with MSAL ID - {user_data['id']} not found")
         )
 
-    site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
-    context = {"user": site_user["name"], "ignore_auth": True}
-    return tk.get_action("user_show")(context, {"id": user.id})
+    return tk.get_action("user_show")(
+        msal_utils.get_site_admin_context(), {"id": user.id}
+    )
 
 
 def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
@@ -113,8 +108,7 @@ def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
     log.info(f"MSAL. A user with the same email has been found: {user_email}")
     log.info("MSAL. Merging users.")
 
-    site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
-    context = {"user": site_user["name"], "ignore_auth": True}
+    context = msal_utils.get_site_admin_context()
 
     user_dict = tk.get_action("user_show")(context, {"id": user.id})
     user_dict.setdefault("plugin_extras", {})
@@ -141,7 +135,7 @@ def get_msal_user_data() -> Dict[str, Any]:
     return
     type: Dict[str, Any]
     """
-    token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(msal_conf.SCOPE)
+    token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(conf.SCOPE)
     if not token:
         return {}
 
@@ -173,7 +167,11 @@ def get_msal_user_data() -> Dict[str, Any]:
             "MSAL. User won't be created, "
             f"because of the domain policy: {user_email}"
         )
-        raise tk.ValidationError({"email": [tk._(msal_conf.RESTRICTION_ERR)]})
+
+        restriction_err: str = tk.config.get(
+            conf.RESTRICTION_ERR, conf.RESTRICTION_ERR_DF
+        )
+        raise tk.ValidationError({"email": [tk._(restriction_err)]})
     return resp.json()
 
 
@@ -199,7 +197,7 @@ def _create_user_from_user_data(user_data: dict) -> Dict[str, Any]:
         username = f"{username}-{dt.now().strftime('%S%f')}"
 
     user = tk.get_action("user_create")(
-        {"ignore_auth": True},
+        msal_utils.get_site_admin_context(),
         {
             "email": email,
             "name": username,
