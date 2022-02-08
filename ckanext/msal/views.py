@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime as dt
 
 from flask import Blueprint
@@ -11,7 +12,7 @@ import ckanext.msal.utils as msal_utils
 from ckanext.msal.user import get_msal_user_data
 
 
-
+log = logging.getLogger(__name__)
 msal = Blueprint('msal', __name__)
 
 
@@ -24,22 +25,14 @@ def authorized():
 
         if "error" in result:
             session.clear()
-
+            log.error(result["error"])
             h.flash_error(
                 tk._("Login error. Contact administrator."))
             return h.redirect_to(h.url_for("user.login"))
 
-        session["user"] = result.get("id_token_claims")
+        session["user"] = get_msal_user_data()
         session["user_exp"] = msal_utils._get_exp_date()
         msal_utils._save_cache(cache)
-
-        user_data = get_msal_user_data()
-        
-        if user_data.get('error'):
-            session.clear()
-            h.flash_error(user_data["error"])
-            return h.redirect_to("user.login")
-        
     except ValueError:
         # Usually caused by CSRF
         # Simply ignore them
