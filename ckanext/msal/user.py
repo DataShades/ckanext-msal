@@ -1,12 +1,16 @@
+from __future__ import annotations
+
+import logging
 from typing import Dict, Optional, Any
 from datetime import datetime as dt
-import logging
 
 import requests
 from faker import Faker
 
 import ckan.plugins.toolkit as tk
 import ckan.logic as logic
+import ckan.model as model
+import ckan.lib.mailer as mailer
 from ckan.lib.munge import munge_name
 
 import ckanext.msal.config as msal_conf
@@ -42,22 +46,100 @@ def get_or_create_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     type: Dict[str, Any]
     """
 
-    object_id: str = user_data["oid"]
-
     try:
-        user: Dict[str, Any] = tk.get_action("user_show")(
-            {"ignore_auth": True}, {"id": object_id}
-        )
-    except logic.NotFound:
+        user: Dict[str, Any] = _get_user(user_data)
+    except tk.ObjectNotFound:
         log.info(f"MSAL. User not found, creating new one.")
         user_dict = get_msal_user_data()
-
+        
         if "error" in user_dict:
             log.error("MSAL. User creation failed.")
+            log.error(user_dict["error"])
             return {}
-        return _create_user_from_user_data(user_dict, object_id) if user_dict else {}
+        
+        return _create_user_from_user_data(user_dict) if user_dict else {}
 
     return user
+
+
+def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
+    """Searches for an existing user created with MSAL
+    or for a user with the same email
+    
+
+    Args:
+        user_data (dict[str, Any]): MSAL user data
+
+    Raises:
+        tk.ObjectNotFound: raises an error if there is no user
+
+    Returns:
+        dict[str, Any]: CKAN user data
+    """
+    
+    user = (
+        model.Session.query(model.User.id)
+        .filter(model.User.plugin_extras["msal"]["id"].astext == str(user_data["id"]))
+        .one_or_none() 
+    )
+    
+    if not user and msal_conf.MERGE_MATCHING_EMAILS:
+        user_dict = _merge_users(user_data)
+        import ipdb;ipdb.set_trace();
+        
+        if user_dict:
+            return user_dict
+
+    if not user:
+        raise tk.ObjectNotFound(tk._(f"User with MSAL ID - {user_data['id']} not found"))
+    
+    site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
+    context = {
+        "user": site_user["name"],
+        "ignore_auth": True
+    }
+    return tk.get_action("user_show")(context, {"id": user.id})
+
+
+def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
+    user_email: str = _get_email(user_data)
+    user = (
+        model.Session.query(model.User.id)
+        .filter(model.User.email == user_email)
+        .one_or_none() 
+    )
+
+    if user is None:
+        return
+    
+    log.info(f"MSAL. A user with the same email has been found: {user_email}")
+    log.info("MSAL. Merging users.")
+
+    site_user = logic.get_action("get_site_user")({"ignore_auth": True}, {})
+    context = {
+        "user": site_user[u'name'],
+        "ignore_auth": True
+    }
+
+    user_dict = tk.get_action("user_show")(context, {"id": user.id})
+    user_dict.setdefault("plugin_extras", {})
+    user_dict["plugin_extras"]["msal"] = {
+        "id": user_data["id"]
+    }
+    
+
+    user_dict['password'] = msal_utils._make_password()
+    user_obj = context["user_obj"]
+    try:
+        log.info(f'Emailing reset link to user: {user_obj.name}')
+        mailer.send_reset_link(user_obj)
+    except mailer.MailerException as e:
+        # SMTP is not configured correctly or the server is
+        # temporarily unavailable
+        log.error(tk._("MSAL. Error sending the password reset email."))
+        log.error(e)
+
+    return tk.get_action("user_update")(context, user_dict)
 
 
 def get_msal_user_data() -> Dict[str, Any]:
@@ -98,13 +180,11 @@ def get_msal_user_data() -> Dict[str, Any]:
             "MSAL. User won't be created, "
             f"because of the domain policy: {user_email}"
         )
-        return {
-            "error": tk._(msal_conf.RESTRICTION_ERR)
-        }
+        raise tk.ValidationError({'email': [tk._(msal_conf.RESTRICTION_ERR)]})
     return resp.json()
 
 
-def _create_user_from_user_data(user_data: dict, object_id: str) -> Dict[str, Any]:
+def _create_user_from_user_data(user_data: dict) -> Dict[str, Any]:
     """Create a user with random password using Microsoft Graph API's data.
 
     raises
@@ -117,7 +197,7 @@ def _create_user_from_user_data(user_data: dict, object_id: str) -> Dict[str, An
     return
     type: dict
     """
-    _id: str = object_id
+
     email: str = _get_email(user_data)
     password: str = msal_utils._make_password()
     username: str = munge_name(_get_username(user_data))
@@ -126,12 +206,16 @@ def _create_user_from_user_data(user_data: dict, object_id: str) -> Dict[str, An
         username = f"{username}-{dt.now().strftime('%S%f')}"
 
     user = tk.get_action("user_create")(
-        {"ignore_auth": True, "user": username},
+        {"ignore_auth": True},
         {
-            "id": _id,
             "email": email,
             "name": username,
             "password": password,
+            "plugin_extras": {
+                "msal": {
+                        "id": user_data["id"]
+                }
+            },
         },
     )
     log.info(f"MSAL. User has been created: {user['id']} - {user['name']}.")

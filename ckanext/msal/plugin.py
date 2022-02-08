@@ -38,7 +38,18 @@ class MsalPlugin(p.SingletonPlugin):
         '''
 
         if session.get('user') and not any((tk.g.setdefault('userobj'), tk.g.setdefault('user'))):
-            user = user_funcs._login_user(session['user'])
+            try:
+                user = user_funcs._login_user(session['user'])
+            except tk.ValidationError as e:
+                session.clear()
+            
+                session["flash"] = []
+                
+                for error in e.error_summary.items():
+                    session["flash"].append(("alert-error", f"{error[0]}: {error[1]}", True))
+                
+                return
+            
 
             if user:
                 tk.g.user = user["name"]
