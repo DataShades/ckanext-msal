@@ -7,6 +7,7 @@ from faker import Faker
 
 import ckan.plugins.toolkit as tk
 import ckan.logic as logic
+from ckan.lib.munge import munge_name
 
 import ckanext.msal.config as msal_conf
 import ckanext.msal.utils as msal_utils
@@ -119,7 +120,7 @@ def _create_user_from_user_data(user_data: dict, object_id: str) -> Dict[str, An
     _id: str = object_id
     email: str = _get_email(user_data)
     password: str = msal_utils._make_password()
-    username: str = _get_username(user_data)
+    username: str = munge_name(_get_username(user_data))
 
     if not _is_username_unique(username):
         username = f"{username}-{dt.now().strftime('%S%f')}"
