@@ -46,6 +46,7 @@ class TestUser(object):
         """
         email = user_funcs._get_email({})
         assert email
+        assert email.endswith("msal.onmicrosoft.com")
 
     def test_get_username(self):
         """
