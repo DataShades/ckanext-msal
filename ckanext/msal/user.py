@@ -142,6 +142,13 @@ def _get_email(user_dict: Dict[str,str,]) -> str:
     """
     Fetches email from user_data if exists, otherwise generates random email
     The `userPrincipalName` is formatted like an email address (username@onmicrosoft.com)
+    
+    userPrincipalName: The user principal name (UPN) of the user.
+        The UPN is an Internet-style login name for the user based on
+        the Internet standard RFC 822. By convention,
+        this should map to the user's email name.
+    
+    mail: The SMTP address for the user, for example, 'jeff@contoso.onmicrosoft.com'
     """
     return user_dict.get("userPrincipalName") or user_dict.get("mail") or _make_email()
 
