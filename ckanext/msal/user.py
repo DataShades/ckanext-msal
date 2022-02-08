@@ -153,7 +153,7 @@ def _get_email(user_dict: Dict[str,str,]) -> str:
     return user_dict.get("userPrincipalName") or user_dict.get("mail") or _make_email()
 
 
-def _make_email(domain: str = "onmicrosoft.com") -> str:
+def _make_email(domain: str = "msal.onmicrosoft.com") -> str:
     """
     Returns a random email with custom domain
     If domain is not provided uses `onmicrosoft.com`
@@ -165,7 +165,7 @@ def _make_email(domain: str = "onmicrosoft.com") -> str:
     type: str
     """
     f = Faker()
-    return f.email()
+    return f.email(domain)
 
 
 def _get_username(user_dict: Dict[str, str]) -> str:
