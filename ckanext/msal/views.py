@@ -5,7 +5,7 @@ from flask import Blueprint
 
 import ckan.lib.helpers as h
 import ckan.plugins.toolkit as tk
-from ckan.common import session, request
+from ckan.common import session
 
 import ckanext.msal.config as conf
 import ckanext.msal.utils as msal_utils
@@ -21,16 +21,24 @@ def authorized():
     try:
         cache = msal_utils._load_cache()
         result = msal_utils.build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
-            session.get("msal_auth_flow", {}), request.args
+            session.get("msal_auth_flow", {}), tk.request.args
         )
 
-        if "error" in result:
-            session.clear()
-            log.error(result["error"])
-            h.flash_error(tk._("Login error. Contact administrator."))
+        session["msal_auth_flow"] = result
+
+        try:
+            user_data = get_msal_user_data()
+        except tk.ValidationError as e:
+            msal_utils._flash_validation_errors(e)
             return h.redirect_to(h.url_for("user.login"))
 
-        session["user"] = get_msal_user_data()
+        if "error" in result or "error" in user_data:
+            msal_utils._clear_session()
+            log.error(result["error"] or user_data["error"])
+            h.flash_error(tk._("Login error. Contact administrator."))
+            return h.redirect_to(h.url_for("user.login"))
+    
+        session["user"] = user_data
         session["user_exp"] = msal_utils._get_exp_date()
         msal_utils._save_cache(cache)
     except ValueError:
@@ -44,7 +52,7 @@ def authorized():
 @msal.route("/user/msal-logout")
 def logout():
     if session.get("msal_auth_flow") or session.get("msal_token_cache"):
-        session.clear()  # Wipe out user and its token cache from session
+        msal_utils._clear_session()
         redirect_uri: str = h.url_for("user.logout", _external=True)
         authority: str = tk.config.get(conf.AUTHORITY, conf.AUTHORITY_DF)
         authority_url: str = f"https://login.microsoftonline.com/{authority}"

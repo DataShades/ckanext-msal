@@ -15,7 +15,7 @@ def _invalidate_user_session():
     if session.get("user"):
         if _is_session_expired():
             if not is_logged_in():
-                session.clear()
+                msal_utils._clear_session()
             else:
                 session["user_exp"] = msal_utils._get_exp_date()
 

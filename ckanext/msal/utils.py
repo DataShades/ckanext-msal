@@ -51,7 +51,7 @@ def _get_token_from_cache(scope=None) -> Optional[Dict[Any, Any]]:
     if accounts:
         _save_cache(cache)
         return app.acquire_token_silent(scope, account=accounts[0])
-
+    return app.acquire_token_silent(scope, account=None)
 
 def _get_exp_date():
     """
@@ -142,3 +142,24 @@ def is_email_allowed(email: str) -> bool:
 def get_site_admin_context() -> dict:
     site_user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
     return {"user": site_user["name"], "ignore_auth": True}
+
+
+def _clear_session():
+    """Wipe out user and its token cache from session
+    """
+    session.clear()
+
+
+def _flash_validation_errors(error: dict):
+    """Adds validation errors to the session
+
+    Args:
+        error (dict): tk.ValidationError error_dict
+    """
+    _clear_session()
+    session["flash"] = []
+
+    for e in error.error_summary.items():
+        session["flash"].append(
+            ("alert-error", f"{e[1]}", True)
+        )

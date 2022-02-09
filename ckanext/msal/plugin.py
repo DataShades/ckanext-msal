@@ -6,6 +6,7 @@ from ckan.common import session
 from ckanext.msal.middleware import SessionInvalidator
 from ckanext.msal.views import get_blueprints
 import ckanext.msal.user as user_funcs
+import ckanext.msal.utils as msal_utils
 
 
 class MsalPlugin(p.SingletonPlugin):
@@ -40,24 +41,16 @@ class MsalPlugin(p.SingletonPlugin):
         if session.get("user") and not any(
             (tk.g.setdefault("userobj"), tk.g.setdefault("user"))
         ):
+            
             try:
                 user = user_funcs._login_user(session["user"])
             except tk.ValidationError as e:
-                session.clear()
-
-                session["flash"] = []
-
-                for error in e.error_summary.items():
-                    session["flash"].append(
-                        ("alert-error", f"{error[0]}: {error[1]}", True)
-                    )
-
-                return
+                return msal_utils._flash_validation_errors(e)
 
             if user:
                 tk.g.user = user["name"]
             else:
-                session.clear()
+                msal_utils._clear_session()
 
     def logout(self):
-        session.clear()
+        msal_utils._clear_session()

@@ -12,6 +12,7 @@ import ckan.logic as logic
 import ckan.model as model
 import ckan.lib.mailer as mailer
 from ckan.lib.munge import munge_name
+from ckan.common import session
 
 import ckanext.msal.config as conf
 import ckanext.msal.utils as msal_utils
@@ -136,13 +137,19 @@ def get_msal_user_data() -> Dict[str, Any]:
     type: Dict[str, Any]
     """
     token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(conf.SCOPE)
-    if not token:
-        return {}
+    
+    access_token: str = session.get("msal_auth_flow", {}).get("access_token", "")
+    if not access_token:
+        token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(conf.SCOPE)
+        access_token: str = token["access_token"] if token else ""
+        
+        if not access_token:
+            return {"error": [tk._("The token has expired. Please, try again.")]}
 
     log.info(f"MSAL. Fetching user data from Microsoft Graph API by an access token.")
     resp = requests.get(
         USER_ENDPOINT,
-        headers={"Authorization": "Bearer " + token["access_token"]},
+        headers={"Authorization": "Bearer " + access_token},
         params={
             "$id"
             "$select": "id,displayName,userPrincipalName,mail,mailNickname,accountEnabled"
@@ -276,16 +283,13 @@ def is_user_enabled(user_dict: Dict[str, str]) -> bool:
     """
     Returns True if user is enabled
 
-    # TODO
-    Currently, we are not using this function.
-
     args
     user_dict: Dict[str, str] - user data dict
 
     return
     type: bool
     """
-    return user_dict.get("accountEnabled") is True
+    return user_dict.get("accountEnabled")
 
 
 def is_user_sysadmin(user_dict: Dict[str, str]) -> bool:
