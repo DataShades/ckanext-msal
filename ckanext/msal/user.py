@@ -6,19 +6,24 @@ from datetime import datetime as dt
 
 import requests
 from faker import Faker
+from sqlalchemy import func
 
 import ckan.plugins.toolkit as tk
 import ckan.logic as logic
-import ckan.model as model
 import ckan.lib.mailer as mailer
 from ckan.lib.munge import munge_name
 from ckan.common import session
+from ckan.model import User, Session
 
 import ckanext.msal.config as conf
 import ckanext.msal.utils as msal_utils
 
 
 log = logging.getLogger(__name__)
+
+user_show = tk.get_action("user_show")
+user_update = tk.get_action("user_update")
+
 USER_ENDPOINT = "https://graph.microsoft.com/beta/me"
 
 
@@ -72,8 +77,8 @@ def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
     """
 
     user = (
-        model.Session.query(model.User.id)
-        .filter(model.User.plugin_extras["msal"]["id"].astext == str(user_data["id"]))
+        Session.query(User.id)
+        .filter(User.plugin_extras["msal"]["id"].astext == str(user_data["id"]))
         .one_or_none()
     )
 
@@ -90,18 +95,16 @@ def _get_user(user_data: dict[str, Any]) -> dict[str, Any]:
             tk._(f"User with MSAL ID - {user_data['id']} not found")
         )
 
-    return tk.get_action("user_show")(
-        msal_utils.get_site_admin_context(), {"id": user.id}
-    )
+    return user_show(msal_utils.get_site_admin_context(), {"id": user.id})
 
 
 def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
     user_email: str = _get_email(user_data)
-    user = (
-        model.Session.query(model.User.id)
-        .filter(model.User.email == user_email)
-        .one_or_none()
-    )
+    query = Session.query(User)
+    _lower = func.lower if is_email_insensitive() else lambda x: x
+    query = query.filter(_lower(User.email) == _lower(user_email))
+
+    user = query.one_or_none()
 
     if user is None:
         return
@@ -111,11 +114,13 @@ def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
 
     context = msal_utils.get_site_admin_context()
 
-    user_dict = tk.get_action("user_show")(context, {"id": user.id})
+    user_dict = user_show(context, {"id": user.id})
     user_dict.setdefault("plugin_extras", {})
-    user_dict["plugin_extras"]["msal"] = {"id": user_data["id"]}
 
+    user_dict["plugin_extras"]["msal"] = {"id": user_data["id"]}
     user_dict["password"] = msal_utils._make_password()
+    user_dict["email"] = user_email
+
     user_obj = context["user_obj"]
     try:
         log.info(f"Emailing reset link to user: {user_obj.name}")
@@ -126,7 +131,7 @@ def _merge_users(user_data: dict) -> Optional[dict[str, Any]]:
         log.error(tk._("MSAL. Error sending the password reset email."))
         log.error(e)
 
-    return tk.get_action("user_update")(context, user_dict)
+    return user_update(context, user_dict)
 
 
 def get_msal_user_data() -> Dict[str, Any]:
@@ -137,12 +142,12 @@ def get_msal_user_data() -> Dict[str, Any]:
     type: Dict[str, Any]
     """
     token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(conf.SCOPE)
-    
+
     access_token: str = session.get("msal_auth_flow", {}).get("access_token", "")
     if not access_token:
         token: Optional[Dict[Any, Any]] = msal_utils._get_token_from_cache(conf.SCOPE)
         access_token: str = token["access_token"] if token else ""
-        
+
         if not access_token:
             return {"error": [tk._("The token has expired. Please, try again.")]}
 
@@ -272,7 +277,7 @@ def _get_username(user_dict: Dict[str, str]) -> str:
 
 def _is_username_unique(username: str) -> bool:
     try:
-        tk.get_action("user_show")({"ignore_auth": True}, {"id": username})
+        user_show({"ignore_auth": True}, {"id": username})
     except logic.NotFound:
         return True
 
@@ -307,3 +312,9 @@ def is_user_sysadmin(user_dict: Dict[str, str]) -> bool:
     type: bool
     """
     return False
+
+
+def is_email_insensitive() -> bool:
+    return tk.asbool(
+        tk.config.get(conf.EMAIL_CASE_INSENSITIVE, conf.EMAIL_CASE_INSENSITIVE_DF)
+    )

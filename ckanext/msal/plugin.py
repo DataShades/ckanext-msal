@@ -49,6 +49,7 @@ class MsalPlugin(p.SingletonPlugin):
 
             if user:
                 tk.g.user = user["name"]
+                tk.g.userobj = model.User.get(user["id"])
             else:
                 msal_utils._clear_session()
 

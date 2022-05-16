@@ -15,6 +15,9 @@ ALLOWED_DOMAINS = "ckanext.msal.restrict.allowed_domain_list"
 RESTRICTION_ERR = "ckanext.msal.restrict.error_message"
 RESTRICTION_ERR_DF = "Your email domain is restricted. Please, contact site admin."
 
+EMAIL_CASE_INSENSITIVE = "ckanext.msal.email_case_insensitive"
+EMAIL_CASE_INSENSITIVE_DF = False
+
 MERGE_MATCHING_EMAILS = "ckanext.msal.merge_matching_emails"
 MERGE_MATCHING_EMAILS_DF = False
 
