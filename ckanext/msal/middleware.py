@@ -42,13 +42,3 @@ def is_logged_in():
 
     return True
 
-
-class SessionInvalidator(object):
-    def __init__(self, app):
-        """Initialize the Session Invalidator Middleware"""
-        self.app = app
-        app.before_request(_invalidate_user_session)
-
-    def __call__(self, environ, start_response):
-
-        return self.app(environ, start_response)
