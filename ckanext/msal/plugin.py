@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as tk
 import ckan.model as model
 from ckan.common import session
 
-from ckanext.msal.middleware import SessionInvalidator
+from ckanext.msal.middleware import _invalidate_user_session
 from ckanext.msal.views import get_blueprints
 import ckanext.msal.user as user_funcs
 import ckanext.msal.utils as msal_utils
@@ -22,7 +22,8 @@ class MsalPlugin(p.SingletonPlugin):
 
     # IMiddleware
     def make_middleware(self, app, config):
-        return SessionInvalidator(app)
+        app.before_request(_invalidate_user_session)
+        return app
 
     # IBlueprint
     def get_blueprint(self):
