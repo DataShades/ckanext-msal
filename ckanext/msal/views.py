@@ -34,7 +34,7 @@ def authorized():
 
         if "error" in result or "error" in user_data:
             msal_utils._clear_session()
-            log.error(result["error"] or user_data["error"])
+            log.error(result.get("error") or user_data.get("error"))
             h.flash_error(tk._("Login error. Contact administrator."))
             return h.redirect_to(h.url_for("user.login"))
     
