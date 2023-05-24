@@ -33,24 +33,20 @@ class MsalPlugin(p.SingletonPlugin):
     def identify(self):
         """Called to identify the user.
 
-        If the user is identified then it should set:
-
-         - tk.g.user: The name of the user
-         - tk.g.userobj: The actual user object
+        If the user is identified then log in
         """
 
         if session.get("user") and not any(
             (tk.g.setdefault("userobj"), tk.g.setdefault("user"))
         ):
-            
+
             try:
                 user = user_funcs._login_user(session["user"])
             except tk.ValidationError as e:
                 return msal_utils._flash_validation_errors(e)
 
-            if user:
-                tk.g.user = user["name"]
-                tk.g.userobj = model.User.get(user["id"])
+            if user := model.User.get(user['id']):
+                tk.login_user(user)
             else:
                 msal_utils._clear_session()
 
