@@ -46,7 +46,7 @@ def authorized():
         # Simply ignore them
         pass
 
-    return h.redirect_to(h.url_for("dashboard.index"))
+    return h.redirect_to(h.url_for("activity.dashboard"))
 
 
 @msal.route("/user/msal-logout")
