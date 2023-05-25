@@ -10,10 +10,10 @@ Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
 | --------------- | ------------- |
-| 2.6 and earlier | not tested    |
-| 2.7             | not tested    |
-| 2.8             | not tested    |
-| 2.9             | yes           |
+| 2.7 and earlier | no            |
+| 2.8             | no            |
+| 2.9             | no            |
+| 2.10.0+         | yes           |
 
 ## Installation
 
@@ -42,10 +42,10 @@ To install ckanext-msal:
 ## Config settings
 	# The application client id. Mandatory option.
 	ckanext.msal.client_id = 000000-0000-0000-0000-00000000000
-	
+
 	# The client secret. Mandatory option.
 	ckanext.msal.client_secret = 000000-0000-0000-0000-00000000000
-	
+
     # The tenant ID. If it's not provided, the common one for multi-tenant app will be used.
     # In this case, the application is not guaranteed to work properly.
     # (optional, default: 'common').
