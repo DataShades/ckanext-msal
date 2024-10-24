@@ -25,7 +25,7 @@ To install ckanext-msal:
 
 2. Clone the source and install it on the virtualenv
 
-    git clone https://github.com/mutantsan/ckanext-msal.git
+    git clone https://github.com/DataShades/ckanext-msal.git
     cd ckanext-msal
     pip install -e .
 	pip install -r requirements.txt
@@ -79,7 +79,7 @@ To install ckanext-msal:
 To install ckanext-msal for development, activate your CKAN virtualenv and
 do:
 
-    git clone https://github.com/mutantsan/ckanext-msal.git
+    git clone https://github.com/DataShades/ckanext-msal.git
     cd ckanext-msal
     python setup.py develop
     pip install -r dev-requirements.txt
