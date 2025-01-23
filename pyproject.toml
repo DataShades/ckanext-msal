@@ -13,7 +13,6 @@ authors = [
 maintainers = [
     {name = "DataShades", email = "datashades@linkdigital.com.au"},
 ]
-license = {text = "AGPL"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
@@ -25,6 +24,9 @@ classifiers = [
 keywords = ["SSO", "CKAN", "Microsoft", "SAML", "MSAL"]
 dependencies = []
 optional-dependencies = {}
+
+[project.license]
+text = "AGPL"
 
 [project.readme]
 file = "README.md"
