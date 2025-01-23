@@ -26,14 +26,14 @@ class TestUtils(object):
     }
 
     def test_exp_date(self):
-        exp_date: float = utils._get_exp_date()
+        exp_date: float = utils.get_exp_date()
 
         assert isinstance(exp_date, float)
         assert dt.now().timestamp() < exp_date
 
     def test_make_password(self):
-        pass1 = utils._make_password()
-        pass2 = utils._make_password()
+        pass1 = utils.make_password()
+        pass2 = utils.make_password()
 
         assert len(pass1) > 16
         assert pass1 != pass2

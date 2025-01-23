@@ -10,10 +10,10 @@ Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
 | --------------- | ------------- |
-| 2.7 and earlier | no            |
-| 2.8             | no            |
-| 2.9             | no            |
-| 2.10.0+         | yes           |
+| 2.10 and earlier| no            |
+| 2.11+           | yes           |
+
+Note, that this particular version of the extension is compatible with CKAN 2.11 and later. If you need to use it with CKAN 2.10 or earlier, please, use the previous version - 1.5.2.
 
 ## Installation
 

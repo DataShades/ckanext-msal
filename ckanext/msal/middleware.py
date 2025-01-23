@@ -6,34 +6,32 @@ import ckanext.msal.utils as msal_utils
 from ckanext.msal.user import get_msal_user_data, is_user_enabled
 
 
-def _invalidate_user_session():
-    """
-    Clears session if user session is expired
-    Otherwise, sets a new expiration date
+def invalidate_user_session() -> None:
+    """Invalidate user session if it's expired.
+
+    If user session is expired, clears the session.
+    Otherwise, sets a new expiration date.
     """
 
     if session.get("user"):
         if _is_session_expired():
-            if not is_logged_in():
+            if not _is_logged_in():
                 msal_utils._clear_session()
             else:
-                session["user_exp"] = msal_utils._get_exp_date()
+                session["user_exp"] = msal_utils.get_exp_date()
 
 
 def _is_session_expired() -> bool:
+    """Check if user session is expired.
+
+    Returns:
+        True if session is expired, False otherwise.
     """
-    Returns `True` if user session is expired
 
-    return
-    type: bool
-    """
-
-    if dt.now().timestamp() >= session.get("user_exp", 0):
-        return True
-    return False
+    return dt.now().timestamp() >= session.get("user_exp", 0)
 
 
-def is_logged_in():
+def _is_logged_in() -> bool:
     user_data = get_msal_user_data()
     # TODO: hypothetically, here we can change something in user metadata
 
@@ -41,4 +39,3 @@ def is_logged_in():
         return False
 
     return True
-

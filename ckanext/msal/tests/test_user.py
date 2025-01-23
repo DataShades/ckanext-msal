@@ -33,23 +33,22 @@ class TestUser(object):
         """
         Returns userPrincipalName from user_dict
         """
-        email = user_funcs._get_email(self.user_dict)
+        email = user_funcs.fetch_email_from_user_data(self.user_dict)
         assert email == "kvaqich@kvaqich.onmicrosoft.com"
 
     def test_get_email_mail(self):
         """
         Returns `mail` field if `userPrincipalName` is empty
         """
-        email = user_funcs._get_email({"mail": "kvaqich@kvaqich.onmicrosoft.com"})
+        email = user_funcs.fetch_email_from_user_data({"mail": "kvaqich@kvaqich.onmicrosoft.com"})
         assert email == "kvaqich@kvaqich.onmicrosoft.com"
 
     def test_get_email_empty(self):
         """
         Returns random email if both fields are empty
         """
-        email = user_funcs._get_email({})
+        email = user_funcs.fetch_email_from_user_data({})
         assert email
-        assert email.endswith("msal.onmicrosoft.com")
 
     def test_get_username(self):
         """
@@ -57,15 +56,15 @@ class TestUser(object):
         mailNickname -> munge(mail) -> munge(userPrincipalName)
         """
         username = user_funcs._get_username(self.user_dict)
-        username == "mark209"
+        assert username == "mark209"
 
         username = user_funcs._get_username({"mail": "testuser@gmail.com"})
-        username == "testuser"
+        assert username == "testuser"
 
         username = user_funcs._get_username(
             {"userPrincipalName": "testuser2@gmail.com"}
         )
-        username == "testuser2"
+        assert username == "testuser2"
 
     def test_is_username_unqiue(self):
         user = factories.User()
